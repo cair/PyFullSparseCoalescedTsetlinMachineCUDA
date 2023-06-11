@@ -25,95 +25,34 @@ code_header = """
 	#include <curand_kernel.h>
 	
 	#define INT_SIZE 32
-
-	#define LA_CHUNKS (((FEATURES-1)/INT_SIZE + 1))
-	#define CLAUSE_CHUNKS ((CLAUSES-1)/INT_SIZE + 1)
-
-	#if (FEATURES % 32 != 0)
-	#define FILTER (~(0xffffffff << (FEATURES % INT_SIZE)))
-	#else
-	#define FILTER 0xffffffff
-	#endif
 """
 
 code_update = """
 	extern "C"
 	{
-		// Counts number of include actions for a given clause
-	    __device__ inline int number_of_include_actions(unsigned int *ta_state)
-	    {
-	        int number_of_include_actions = 0;
-	        for (int k = 0; k < LA_CHUNKS-1; ++k) {
-	            unsigned int ta_pos = k*STATE_BITS + STATE_BITS-1;
-	            number_of_include_actions += __popc(ta_state[ta_pos]);
-	        }
-	        unsigned int ta_pos = (LA_CHUNKS-1)*STATE_BITS + STATE_BITS-1;
-	        number_of_include_actions += __popc(ta_state[ta_pos] & FILTER);
-
-	        return(number_of_include_actions);
-	    }
-
-    	// Increment the states of each of those 32 Tsetlin Automata flagged in the active bit vector.
-		__device__ inline void inc(unsigned int *ta_state, int clause, int chunk, unsigned int active)
-		{
-			unsigned int carry, carry_next;
-			int id = clause*LA_CHUNKS*STATE_BITS + chunk*STATE_BITS;
-			carry = active;
-			for (int b = 0; b < STATE_BITS; ++b) {
-				if (carry == 0)
-					break;
-
-				carry_next = ta_state[id + b] & carry; // Sets carry bits (overflow) passing on to next bit
-				ta_state[id + b] = ta_state[id + b] ^ carry; // Performs increments with XOR
-				carry = carry_next;
-			}
-
-			if (carry > 0) {
-				for (int b = 0; b < STATE_BITS; ++b) {
-					ta_state[id + b] |= carry;
-				}
-			}   
-		}
-
-		// Decrement the states of each of those 32 Tsetlin Automata flagged in the active bit vector.
-		__device__ inline void dec(unsigned int *ta_state, int clause, int chunk, unsigned int active)
-		{
-			unsigned int carry, carry_next;
-			int id = clause*LA_CHUNKS*STATE_BITS + chunk*STATE_BITS;
-			carry = active;
-			for (int b = 0; b < STATE_BITS; ++b) {
-				if (carry == 0)
-					break;
-				carry_next = (~ta_state[id + b]) & carry; // Sets carry bits (overflow) passing on to next bit
-				ta_state[id + b] = ta_state[id + b] ^ carry; // Performs increments with XOR
-				carry = carry_next;
-			}
-
-			if (carry > 0) {
-				for (int b = 0; b < STATE_BITS; ++b) {
-					ta_state[id + b] &= ~carry;
-				}
-			} 
-		}
-
-		__device__ inline void calculate_clause_output(curandState *localState, unsigned int *ta_state, unsigned int *clause_output, int *clause_patch, int *X)
+		__device__ inline void calculate_clause_output(
+			curandState *localState,
+			unsigned int *included_literals,
+			unsigned int *included_literals_length,
+			unsigned int *clause_output,
+			int *clause_patch,
+			int *X)
 		{
 			int output_one_patches[PATCHES];
 			int output_one_patches_count;
 
 			// Evaluate each patch (convolution)
 			output_one_patches_count = 0;
-			for (int patch = 0; patch < PATCHES; ++patch) {
+			for (int patch = 0; patch < PATCHES; ++patch) {		
 				int patch_clause_output = 1;
-				for (int la_chunk = 0; la_chunk < LA_CHUNKS-1; ++la_chunk) {
-					if ((ta_state[la_chunk*STATE_BITS + STATE_BITS - 1] & X[patch*LA_CHUNKS + la_chunk]) != ta_state[la_chunk*STATE_BITS + STATE_BITS - 1]) {
+				for (int literal = 0; literal < included_literals_length[clause]; ++literal) {
+					int chunk = included_literals[clause*FEATURES*2 + literal*2] / INT_SIZE;
+					int chunk_pos = included_literals[clause*FEATURES*2 + literal*2] % INT_SIZE;
+
+					if (!(X[patch*LA_CHUNKS + chunk] & (1 << chunk_pos))) {
 						patch_clause_output = 0;
 						break;
 					}
-				}
-
-				if (((ta_state[(LA_CHUNKS-1)*STATE_BITS + STATE_BITS - 1] & X[patch*LA_CHUNKS + LA_CHUNKS - 1] & FILTER) != (ta_state[(LA_CHUNKS-1)*STATE_BITS + STATE_BITS - 1] & FILTER))) {
-					patch_clause_output = 0;
 				}
 
 				if (patch_clause_output) {
@@ -286,10 +225,10 @@ code_evaluate = """
 				for (int patch = 0; patch < PATCHES; ++patch) {
 					clause_output = 1;
 					for (int literal = 0; literal < included_literals_length[clause]; ++literal) {
-						int chunk = included_literals[clause*FEATURES*2 + literal*2] / 32;
-						int chunk_pos = included_literals[clause*FEATURES*2 + literal*2] % 32;
+						int chunk = included_literals[clause*FEATURES*2 + literal*2] / INT_SIZE;
+						int chunk_pos = included_literals[clause*FEATURES*2 + literal*2] % INT_SIZE;
 
-						if (!(X[chunk] & (1 << chunk_pos))) {
+						if (!(X[patch*LA_CHUNKS + chunk] & (1 << chunk_pos))) {
 							clause_output = 0;
 							break;
 						}
