@@ -264,42 +264,35 @@ code_evaluate = """
 	extern "C"
     {
 		// Evaluate examples
-		__global__ void evaluate(unsigned int *global_ta_state, int *clause_weights, int *class_sum, int *X)
+		__global__ void evaluate(
+			unsigned int *included_literals,
+			unsigned int *included_literals_length,
+			unsigned int *excluded_literals,
+			unsigned int *excluded_literals_length,
+			int *clause_weights,
+			int *class_sum,
+			int *X
+		)
 		{
 			int index = blockIdx.x * blockDim.x + threadIdx.x;
 			int stride = blockDim.x * gridDim.x;
 
 			for (int clause = index; clause < CLAUSES; clause += stride) {
-				unsigned int *ta_state = &global_ta_state[clause*LA_CHUNKS*STATE_BITS];
-
-				int all_exclude = 1;
-				for (int la_chunk = 0; la_chunk < LA_CHUNKS-1; ++la_chunk) {
-					if (ta_state[la_chunk*STATE_BITS + STATE_BITS - 1] > 0) {
-						all_exclude = 0;
-						break;
-					}
-				}
-
-				if ((ta_state[(LA_CHUNKS-1)*STATE_BITS + STATE_BITS - 1] & FILTER) > 0) {
-					all_exclude = 0;
-				}
-
-				if (all_exclude) {
+				if (included_literals_length[clause] == 0) {
 					continue;
 				}
 
 				int clause_output;
 				for (int patch = 0; patch < PATCHES; ++patch) {
 					clause_output = 1;
-					for (int la_chunk = 0; la_chunk < LA_CHUNKS-1; ++la_chunk) {
-						if ((ta_state[la_chunk*STATE_BITS + STATE_BITS - 1] & X[patch*LA_CHUNKS + la_chunk]) != ta_state[la_chunk*STATE_BITS + STATE_BITS - 1]) {
+					for (int literal = 0; literal < included_literals_length[clause]; ++literal) {
+						int chunk = included_literals[clause*FEATURES*2 + literal*2] / 32;
+						int chunk_pos = included_literals[clause*FEATURES*2 + literal*2] % 32;
+
+						if (!(X[chunk] & (1 << chunk_pos))) {
 							clause_output = 0;
 							break;
 						}
-					}
-
-					if ((ta_state[(LA_CHUNKS-1)*STATE_BITS + STATE_BITS - 1] & X[patch*LA_CHUNKS + LA_CHUNKS-1] & FILTER) != (ta_state[(LA_CHUNKS-1)*STATE_BITS + STATE_BITS - 1] & FILTER)) {
-						clause_output = 0;
 					}
 
 					if (clause_output) {
@@ -345,12 +338,12 @@ code_prepare = """
 					#endif
 				}
 
-				unsigned int *ta_state = &global_ta_state[clause*LA_CHUNKS*STATE_BITS];
-				for (int la_chunk = 0; la_chunk < LA_CHUNKS-1; ++la_chunk) {
-					for (int b = 0; b < STATE_BITS-1; ++b) {
-						ta_state[la_chunk*STATE_BITS + b] = ~0;
-					}
-					ta_state[la_chunk*STATE_BITS + STATE_BITS - 1] = 0;
+				included_literals_length[clause] = 0;
+
+				excluded_literals_length[clause] = FEATURES;
+				for (int literal = 0; literal < FEATURES; ++literal) {
+					excluded_literals[clause*FEATURES*2 + literal*2] = literal;
+					excluded_literals[clause*FEATURES*2 + literal*2 + 1] = STATES / 2 - 1;
 				}
 			}
 
