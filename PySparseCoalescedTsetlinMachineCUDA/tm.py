@@ -185,7 +185,7 @@ class CommonTsetlinMachine():
 #define CLASSES %d
 #define CLAUSES %d
 #define FEATURES %d
-#define STATE_BITS %d
+#define STATES %d
 #define BOOST_TRUE_POSITIVE_FEEDBACK %d
 #define S %f
 #define THRESHOLD %d
