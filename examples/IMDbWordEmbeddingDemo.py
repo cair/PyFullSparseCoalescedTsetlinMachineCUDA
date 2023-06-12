@@ -75,13 +75,13 @@ X_train = vectorizer_X.fit_transform(training_documents)
 feature_names = vectorizer_X.get_feature_names()
 number_of_features = len(feature_names)
 
-target_words = []
-for word in feature_names:
-	word_id = vectorizer_X.vocabulary_[word]
+# target_words = []
+# for word in feature_names:
+# 	word_id = vectorizer_X.vocabulary_[word]
 
-	target_words.append(word)
-	if len(target_words) == number_of_output_words:
-		break
+# 	target_words.append(word)
+# 	if len(target_words) == number_of_output_words:
+# 		break
 
 X_test = vectorizer_X.transform(testing_documents)
 
