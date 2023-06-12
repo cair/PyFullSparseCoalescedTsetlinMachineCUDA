@@ -428,7 +428,7 @@ code_prepare = """
 
 				included_literals_length[clause] = 0;
 
-				excluded_literals_length[clause] = FEATURES/10;
+				excluded_literals_length[clause] = FEATURES * LITERAL_SAMPLING;
 				for (int literal = 0; literal < FEATURES; ++literal) {
 					excluded_literals[clause*FEATURES*2 + literal*2] = literal;
 					excluded_literals[clause*FEATURES*2 + literal*2 + 1] = STATES / 2 - 1;
