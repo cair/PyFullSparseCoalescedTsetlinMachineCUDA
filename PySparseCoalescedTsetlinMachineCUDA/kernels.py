@@ -382,6 +382,26 @@ code_evaluate = """
 code_prepare = """
 	extern "C"
     {
+
+    	__device__ void shuffle(
+    		curandState *localState,
+			unsigned int *excluded_literals
+		)
+		{
+			if (FEATURES > 1) {
+		        int i;
+		        for (i = FEATURES - 1; i > 0; i--) {
+		           	int j = (int)(curand_uniform(localState)*(i+1));
+		            int index = excluded_literals[j*2];
+		            int state = excluded_literals[j*2 + 1];
+		            excluded_literals[j*2] = excluded_literals[i*2];
+		          	excluded_literals[j*2+1] = excluded_literals[i*2+1];
+					excluded_literals[i*2] = index;
+					excluded_literals[i*2 + 1] = state;
+		        }
+		    }
+		}
+
 		__global__ void prepare(
 			curandState *state,
 			unsigned int *included_literals,
@@ -408,11 +428,12 @@ code_prepare = """
 
 				included_literals_length[clause] = 0;
 
-				excluded_literals_length[clause] = FEATURES;
+				excluded_literals_length[clause] = FEATURES/10;
 				for (int literal = 0; literal < FEATURES; ++literal) {
 					excluded_literals[clause*FEATURES*2 + literal*2] = literal;
 					excluded_literals[clause*FEATURES*2 + literal*2 + 1] = STATES / 2 - 1;
 				}
+				shuffle(&localState, &excluded_literals[clause*FEATURES*2]);
 			}
 
 			state[index] = localState;
