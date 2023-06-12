@@ -196,7 +196,7 @@ class CommonTsetlinMachine():
 #define FEATURES %d
 #define STATES %d
 #define BOOST_TRUE_POSITIVE_FEEDBACK %d
-#define ABSORBING STATE %d
+#define ABSORBING_STATE %d
 #define S %f
 #define THRESHOLD %d
 #define Q %f
