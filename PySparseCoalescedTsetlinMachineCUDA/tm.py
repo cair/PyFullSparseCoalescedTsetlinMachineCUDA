@@ -281,6 +281,7 @@ class CommonTsetlinMachine():
 
 		for epoch in range(epochs):
 			for e in range(X.shape[0]):
+				print(e);
 				class_sum = np.zeros(self.number_of_outputs).astype(np.int32)
 				cuda.memcpy_htod(self.class_sum_gpu, class_sum)
 
