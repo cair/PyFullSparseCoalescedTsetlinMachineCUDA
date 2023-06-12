@@ -71,7 +71,19 @@ code_update = """
 			}
 		}
 
-		__device__ inline void update_clause(curandState *localState, int *clause_weight, unsigned int *ta_state, int clause_output, int clause_patch, int *X, int y, int class_sum)
+		__device__ inline void update_clause(
+			curandState *localState,
+			int *clause_weight,
+			unsigned int *included_literals,
+			unsigned int *included_literals_length,
+			unsigned int *excluded_literals,
+			unsigned int *excluded_literals_length,
+			int clause_output,
+			int clause_patch,
+			int *X,
+			int y,
+			int class_sum
+		)
 		{
 			int target = 1 - 2*(class_sum > y);
 			
@@ -84,32 +96,79 @@ code_update = """
 			int absolute_prediction_error = abs(y - class_sum);
 			if (curand_uniform(localState) <= 1.0*absolute_prediction_error/(2*THRESHOLD)) {
 				if (target*sign > 0) {
-					int included_literals = number_of_include_actions(ta_state);
-
 					if (clause_output && abs(*clause_weight) < INT_MAX) {
 						(*clause_weight) += sign;
 					}
 
 					// Type I Feedback
-					for (int la_chunk = 0; la_chunk < LA_CHUNKS; ++la_chunk) {
-						// Generate random bit values
-						unsigned int la_feedback = 0;
-						for (int b = 0; b < INT_SIZE; ++b) {
-							if (curand_uniform(localState) <= 1.0/S) {
-								la_feedback |= (1 << b);
+
+					if (clause_output && (*included_literals_length) <= MAX_INCLUDED_LITERALS) {
+						int literal = (*included_literals_length);
+						while (literal--) {
+							int chunk = included_literals[literal*2] / INT_SIZE;
+							int chunk_pos = included_literals[literal*2] % INT_SIZE;
+
+							if (X[clause_patch*LA_CHUNKS + chunk] & (1 << chunk_pos)) {
+								if (included_literals[literal*2 + 1] < STATES - 1) {
+									included_literals[literal*2 + 1]++;
+								}
+							} else if (curand_uniform(localState) <= 1.0/s) {
+								included_literals[literal*2 + 1]--;
+			                    if (included_literals[literal*2 + 1] < STATES / 2) {
+			                        excluded_literals[(*excluded_literals_length)*2] = included_literals[literal*2];
+			                        excluded_iterals[(*excluded_literals_length)*2 + 1] = included_literals[literal*2 + 1];
+			                        (*excluded_literals_length)++;
+
+			                        (*included_literals_length)--;
+			                        included_literals[literals*2] = included_literals[(*included_literals_length)*2];       
+			                        included_literals[literals*2 + 1] = included_literals[(*included_literals_length)*2 + 1];
+			                    }
 							}
 						}
 
-						if (clause_output && included_literals <= MAX_INCLUDED_LITERALS) {
-							#if BOOST_TRUE_POSITIVE_FEEDBACK == 1
-								inc(ta_state, 0, la_chunk, X[clause_patch*LA_CHUNKS + la_chunk]);
-							#else
-								inc(ta_state, 0, la_chunk, X[clause_patch*LA_CHUNKS + la_chunk] & (~la_feedback));
-							#endif
+						literal = (*excluded_literals_length);
+						while (literal--) {
+							int chunk = excluded_literals[literal*2] / INT_SIZE;
+							int chunk_pos = excluded_literals[literal*2] % INT_SIZE;
 
-							dec(ta_state, 0, la_chunk, (~X[clause_patch*LA_CHUNKS + la_chunk]) & la_feedback);
-						} else {
-							dec(ta_state, 0, la_chunk, la_feedback);
+							if (X[clause_patch*LA_CHUNKS + chunk] & (1 << chunk_pos)) {
+								excluded_literals[literal*2 + 1]++;
+
+								if (excluded_literals[literal*2 + 1] >= STATES / 2) {
+			                        included_literals[(*included_literals_length)*2] = excluded_literals[literal*2];
+			                        included_iterals[(*included_literals_length)*2 + 1] = excluded_literals[literal*2 + 1];
+			                        (*included_literals_length)++;
+
+			                        (*excluded_literals_length)--;
+			                        excluded_literals[literals*2] = excluded_literals[(*excluded_literals_length)*2];       
+			                        excluded_literals[literals*2 + 1] = excluded_literals[(*excluded_literals_length)*2 + 1];
+		                    	}
+							} else if (curand_uniform(localState) <= 1.0/s && excluded_literals[literal*2 + 1] > 0) {
+								excluded_literals[literal*2 + 1]--;
+							}
+						}
+					} else {
+						int literal = (*included_literals_length);
+						while (literal--) {
+							if (curand_uniform(localState) <= 1.0/s) {
+								included_literals[literal*2 + 1]--;
+			                    if (included_literals[literal*2 + 1] < STATES / 2) {
+			                        excluded_literals[(*excluded_literals_length)*2] = included_literals[literal*2];
+			                        excluded_iterals[(*excluded_literals_length)*2 + 1] = included_literals[literal*2 + 1];
+			                        (*excluded_literals_length)++;
+
+			                        (*included_literals_length)--;
+			                        included_literals[literals*2] = included_literals[(*included_literals_length)*2];       
+			                        included_literals[literals*2 + 1] = included_literals[(*included_literals_length)*2 + 1];
+			                    }
+							}
+						}
+
+						literal = (*excluded_literals_length);
+						while (literal--) {
+							if (curand_uniform(localState) <= 1.0/s && excluded_literals[literal*2 + 1] > 0) {
+								excluded_literals[literal*2 + 1]--;
+							}
 						}
 					}
 				} else if (target*sign < 0 && clause_output) {
@@ -122,8 +181,24 @@ code_update = """
 						}
 					#endif
 
-					for (int la_chunk = 0; la_chunk < LA_CHUNKS; ++la_chunk) {
-						inc(ta_state, 0, la_chunk, (~X[clause_patch*LA_CHUNKS + la_chunk]) & (~ta_state[la_chunk*STATE_BITS + STATE_BITS - 1]));
+					literal = (*excluded_literals_length);
+					while (literal--) {
+						int chunk = excluded_literals[literal*2] / INT_SIZE;
+						int chunk_pos = excluded_literals[literal*2] % INT_SIZE;
+
+						if (!(X[clause_patch*LA_CHUNKS + chunk] & (1 << chunk_pos))) {
+							excluded_literals[literal*2 + 1]++;
+
+							if (excluded_literals[literal*2 + 1] >= STATES / 2) {
+		                        included_literals[(*included_literals_length)*2] = excluded_literals[literal*2];
+		                        included_iterals[(*included_literals_length)*2 + 1] = excluded_literals[literal*2 + 1];
+		                        (*included_literals_length)++;
+
+		                        (*excluded_literals_length)--;
+		                        excluded_literals[literals*2] = excluded_literals[(*excluded_literals_length)*2];       
+		                        excluded_literals[literals*2 + 1] = excluded_literals[(*excluded_literals_length)*2 + 1];
+	                    	}
+						}
 					}
 				}
 			}
@@ -167,7 +242,18 @@ code_update = """
 		}
 
 		// Update state of Tsetlin Automata team
-		__global__ void update(curandState *state, unsigned int *global_ta_state, int *clause_weights, int *class_sum, int *X, int *y, int example)
+		__global__ void update(
+			curandState *state,
+			unsigned int *global_included_literals,
+			unsigned int *global_included_literals_length,
+			unsigned int *global_excluded_literals,
+			unsigned int *global_excluded_literals_length,
+			int *clause_weights,
+			int *class_sum,
+			int *X,
+			int *y,
+			int example
+		)
 		{
 			int index = blockIdx.x * blockDim.x + threadIdx.x;
 			int stride = blockDim.x * gridDim.x;
@@ -177,11 +263,23 @@ code_update = """
 
 			// Calculate clause output first
 			for (unsigned long long clause = index; clause < CLAUSES; clause += stride) {
-				unsigned int *ta_state = &global_ta_state[clause*LA_CHUNKS*STATE_BITS];
+				unsigned int *included_literals = &global_included_literals[clause*FEATURES*2];
+				unsigned int *included_literals_length = &global_included_literals_length[clause];
+				unsigned int *excluded_literals = &global_excluded_literals[clause*FEATURES*2];
+				unsigned int *excluded_literals_length = &global_excluded_literals_length[clause];
 
 				unsigned int clause_output;
 				int clause_patch;
-				calculate_clause_output(&localState, ta_state, &clause_output, &clause_patch, X);
+				calculate_clause_output(
+					&localState,
+					included_literals,
+					included_literals_length,
+					excluded_literals,
+					excluded_literals_length,
+					&clause_output,
+					&clause_patch,
+					X
+				);
 
 				for (unsigned long long class_id = 0; class_id < CLASSES; ++class_id) {
 					int local_class_sum = class_sum[class_id];
@@ -190,7 +288,20 @@ code_update = """
 					} else if (local_class_sum < -THRESHOLD) {
 						local_class_sum = -THRESHOLD;
 					}
-					update_clause(&localState, &clause_weights[class_id*CLAUSES + clause], ta_state, clause_output, clause_patch, X, y[example*CLASSES + class_id], local_class_sum);
+
+					update_clause(
+						&localState,
+						&clause_weights[class_id*CLAUSES + clause],
+						included_literals,
+						included_literals_length,
+						excluded_literals,
+						excluded_literals_length,
+						clause_output,
+						clause_patch,
+						X,
+						y[example*CLASSES + class_id],
+						local_class_sum
+					);
 				}
 			}
 		
