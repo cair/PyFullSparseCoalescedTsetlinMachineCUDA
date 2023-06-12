@@ -169,7 +169,7 @@ code_update = """
 							}
 						}
 
-						int number_of_updates = 1.0*(*excluded_literals_length)/S
+						int number_of_updates = 1.0*(*excluded_literals_length)/S;
 						for (int k = 0; k < number_of_updates; ++k) {
 							int literal = (curand(&localState) % (*excluded_literals_length));
 							if (excluded_literals[literal*2 + 1] > 0) {
