@@ -40,7 +40,8 @@ code_update = """
 			unsigned int *included_literals_length,
 			unsigned int *clause_output,
 			int *clause_patch,
-			int *X)
+			int *X
+		)
 		{
 			int output_one_patches[PATCHES];
 			int output_one_patches_count;
