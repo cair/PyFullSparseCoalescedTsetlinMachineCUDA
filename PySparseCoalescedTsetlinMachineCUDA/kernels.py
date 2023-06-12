@@ -185,7 +185,7 @@ code_update = """
 						}
 					#endif
 
-					literal = (*excluded_literals_length);
+					int literal = (*excluded_literals_length);
 					while (literal--) {
 						int chunk = excluded_literals[literal*2] / INT_SIZE;
 						int chunk_pos = excluded_literals[literal*2] % INT_SIZE;
