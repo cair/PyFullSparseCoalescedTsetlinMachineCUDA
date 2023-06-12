@@ -631,10 +631,30 @@ class AutoEncoderTsetlinMachine(CommonTsetlinMachine):
 	def _init_fit(self, X_csr, encoded_Y, incremental):
 		if not self.initialized:
 			self._init(X_csr)
-			self.prepare(g.state, self.ta_state_gpu, self.clause_weights_gpu, self.class_sum_gpu, grid=self.grid, block=self.block)
+			self.prepare(
+				g.state,
+				self.included_literals_gpu,
+				self.included_literals_length_gpu,
+				self.excluded_literals_gpu,
+				self.excluded_literals_length_gpu,
+				self.clause_weights_gpu,
+				self.class_sum_gpu,
+				grid=self.grid,
+				block=self.block
+			)
 			cuda.Context.synchronize()
 		elif incremental == False:
-			self.prepare(g.state, self.ta_state_gpu, self.clause_weights_gpu, self.class_sum_gpu, grid=self.grid, block=self.block)
+			self.prepare(
+				g.state,
+				self.included_literals_gpu,
+				self.included_literals_length_gpu,
+				self.excluded_literals_gpu,
+				self.excluded_literals_length_gpu,
+				self.clause_weights_gpu,
+				self.class_sum_gpu,
+				grid=self.grid,
+				block=self.block
+			)
 			cuda.Context.synchronize()
 
 		if not np.array_equal(self.X_train, np.concatenate((X_csr.indptr, X_csr.indices))):
