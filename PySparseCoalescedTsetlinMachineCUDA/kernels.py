@@ -53,7 +53,7 @@ code_update = """
 					int chunk = included_literals[clause*FEATURES*2 + literal*2] / INT_SIZE;
 					int chunk_pos = included_literals[clause*FEATURES*2 + literal*2] % INT_SIZE;
 
-					if (!(X[patch*LA_CHUNKS + chunk] & (1 << chunk_pos))) {
+					if (!(X[patch*X_CHUNKS + chunk] & (1 << chunk_pos))) {
 						patch_clause_output = 0;
 						break;
 					}
@@ -112,7 +112,7 @@ code_update = """
 							int chunk = included_literals[literal*2] / INT_SIZE;
 							int chunk_pos = included_literals[literal*2] % INT_SIZE;
 
-							if (X[clause_patch*LA_CHUNKS + chunk] & (1 << chunk_pos)) {
+							if (X[clause_patch*X_CHUNKS + chunk] & (1 << chunk_pos)) {
 								if (included_literals[literal*2 + 1] < STATES - 1) {
 									included_literals[literal*2 + 1]++;
 								}
@@ -135,7 +135,7 @@ code_update = """
 							int chunk = excluded_literals[literal*2] / INT_SIZE;
 							int chunk_pos = excluded_literals[literal*2] % INT_SIZE;
 
-							if (X[clause_patch*LA_CHUNKS + chunk] & (1 << chunk_pos)) {
+							if (X[clause_patch*X_CHUNKS + chunk] & (1 << chunk_pos)) {
 								excluded_literals[literal*2 + 1]++;
 
 								if (excluded_literals[literal*2 + 1] >= STATES / 2) {
@@ -190,7 +190,7 @@ code_update = """
 						int chunk = excluded_literals[literal*2] / INT_SIZE;
 						int chunk_pos = excluded_literals[literal*2] % INT_SIZE;
 
-						if (!(X[clause_patch*LA_CHUNKS + chunk] & (1 << chunk_pos))) {
+						if (!(X[clause_patch*X_CHUNKS + chunk] & (1 << chunk_pos))) {
 							excluded_literals[literal*2 + 1]++;
 
 							if (excluded_literals[literal*2 + 1] >= STATES / 2) {
@@ -208,27 +208,32 @@ code_update = """
 			}
 		}
 
-		// Evaluate example
-		__global__ void evaluate(unsigned int *global_ta_state, int *clause_weights, int *class_sum, int *X)
+		// Evaluate examples
+		__global__ void evaluate(
+			unsigned int *included_literals,
+			unsigned int *included_literals_length,
+			unsigned int *excluded_literals,
+			unsigned int *excluded_literals_length,
+			int *clause_weights,
+			int *class_sum,
+			int *X
+		)
 		{
 			int index = blockIdx.x * blockDim.x + threadIdx.x;
 			int stride = blockDim.x * gridDim.x;
 
 			for (int clause = index; clause < CLAUSES; clause += stride) {
-				unsigned int *ta_state = &global_ta_state[clause*LA_CHUNKS*STATE_BITS];
-
 				int clause_output;
 				for (int patch = 0; patch < PATCHES; ++patch) {
 					clause_output = 1;
-					for (int la_chunk = 0; la_chunk < LA_CHUNKS-1; ++la_chunk) {
-						if ((ta_state[la_chunk*STATE_BITS + STATE_BITS - 1] & X[patch*LA_CHUNKS + la_chunk]) != ta_state[la_chunk*STATE_BITS + STATE_BITS - 1]) {
+					for (int literal = 0; literal < included_literals_length[clause]; ++literal) {
+						int chunk = included_literals[clause*FEATURES*2 + literal*2] / INT_SIZE;
+						int chunk_pos = included_literals[clause*FEATURES*2 + literal*2] % INT_SIZE;
+
+						if (!(X[patch*X_CHUNKS + chunk] & (1 << chunk_pos))) {
 							clause_output = 0;
 							break;
 						}
-					}
-
-					if ((ta_state[(LA_CHUNKS-1)*STATE_BITS + STATE_BITS - 1] & X[patch*LA_CHUNKS + LA_CHUNKS-1] & FILTER) != (ta_state[(LA_CHUNKS-1)*STATE_BITS + STATE_BITS - 1] & FILTER)) {
-						clause_output = 0;
 					}
 
 					if (clause_output) {
@@ -343,7 +348,7 @@ code_evaluate = """
 						int chunk = included_literals[clause*FEATURES*2 + literal*2] / INT_SIZE;
 						int chunk_pos = included_literals[clause*FEATURES*2 + literal*2] % INT_SIZE;
 
-						if (!(X[patch*LA_CHUNKS + chunk] & (1 << chunk_pos))) {
+						if (!(X[patch*X_CHUNKS + chunk] & (1 << chunk_pos))) {
 							clause_output = 0;
 							break;
 						}
@@ -639,17 +644,17 @@ code_transform = """
 			int stride = blockDim.x * gridDim.x;
 
 			for (int j = index; j < CLAUSES; j += stride) {
-				unsigned int *ta_state = &global_ta_state[j*LA_CHUNKS*STATE_BITS];
+				unsigned int *ta_state = &global_ta_state[j*X_CHUNKS*STATES];
 
 				int all_exclude = 1;
-				for (int la_chunk = 0; la_chunk < LA_CHUNKS-1; ++la_chunk) {
-					if (ta_state[la_chunk*STATE_BITS + STATE_BITS - 1] > 0) {
+				for (int la_chunk = 0; la_chunk < X_CHUNKS-1; ++la_chunk) {
+					if (ta_state[la_chunk*STATES + STATES - 1] > 0) {
 						all_exclude = 0;
 						break;
 					}
 				}
 
-				if ((ta_state[(LA_CHUNKS-1)*STATE_BITS + STATE_BITS - 1] & FILTER) > 0) {
+				if ((ta_state[(X_CHUNKS-1)*STATES + STATES - 1] & FILTER) > 0) {
 					all_exclude = 0;
 				}
 
@@ -665,14 +670,14 @@ code_transform = """
 					int clause_output;
 					for (int patch = 0; patch < PATCHES; ++patch) {
 						clause_output = 1;
-						for (int la_chunk = 0; la_chunk < LA_CHUNKS-1; ++la_chunk) {
-							if ((ta_state[la_chunk*STATE_BITS + STATE_BITS - 1] & X[e*(LA_CHUNKS*PATCHES) + patch*LA_CHUNKS + la_chunk]) != ta_state[la_chunk*STATE_BITS + STATE_BITS - 1]) {
+						for (int la_chunk = 0; la_chunk < X_CHUNKS-1; ++la_chunk) {
+							if ((ta_state[la_chunk*STATES + STATES - 1] & X[e*(X_CHUNKS*PATCHES) + patch*X_CHUNKS + la_chunk]) != ta_state[la_chunk*STATES + STATES - 1]) {
 								clause_output = 0;
 								break;
 							}
 						}
 
-						if ((ta_state[(LA_CHUNKS-1)*STATE_BITS + STATE_BITS - 1] & X[e*(LA_CHUNKS*PATCHES) + patch*LA_CHUNKS + LA_CHUNKS-1] & FILTER) != (ta_state[(LA_CHUNKS-1)*STATE_BITS + STATE_BITS - 1] & FILTER)) {
+						if ((ta_state[(X_CHUNKS-1)*STATES + STATES - 1] & X[e*(X_CHUNKS*PATCHES) + patch*X_CHUNKS + X_CHUNKS-1] & FILTER) != (ta_state[(X_CHUNKS-1)*STATES + STATES - 1] & FILTER)) {
 							clause_output = 0;
 						}
 
