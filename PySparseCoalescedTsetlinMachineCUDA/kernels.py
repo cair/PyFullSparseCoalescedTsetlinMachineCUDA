@@ -176,13 +176,13 @@ code_update = """
 								excluded_literals[literal*2 + 1]--;
 							}
 						}
-						
-						# literal = (*excluded_literals_length);
-						# while (literal--) {
-						# 	if (curand_uniform(localState) <= 1.0/S && excluded_literals[literal*2 + 1] > 0) {
-						# 		excluded_literals[literal*2 + 1]--;
-						# 	}
-						# }
+
+						// literal = (*excluded_literals_length);
+						// while (literal--) {
+						// 	if (curand_uniform(localState) <= 1.0/S && excluded_literals[literal*2 + 1] > 0) {
+						// 		excluded_literals[literal*2 + 1]--;
+						// 	}
+						// }
 					}
 				} else if (target*sign < 0 && clause_output) {
 					// Type II Feedback
