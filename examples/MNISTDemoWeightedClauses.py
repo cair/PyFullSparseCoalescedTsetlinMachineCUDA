@@ -18,7 +18,7 @@ epochs = 250
 X_train = np.where(X_train.reshape((X_train.shape[0], 28*28)) > 75, 1, 0)
 X_test = np.where(X_test.reshape((X_test.shape[0], 28*28)) > 75, 1, 0) 
 
-tm = MultiClassTsetlinMachine(int(factor*2000), T, s, max_included_literals=16, absorbing_state=75)
+tm = MultiClassTsetlinMachine(int(factor*2000), T, s, absorbing_state=75)
 
 print("\nAccuracy over 100 epochs:\n")
 for i in range(100):
