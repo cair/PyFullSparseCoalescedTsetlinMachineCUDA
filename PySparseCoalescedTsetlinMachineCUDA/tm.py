@@ -92,6 +92,11 @@ class CommonTsetlinMachine():
 		self.excluded_literals_gpu = cuda.mem_alloc(self.number_of_clauses*self.number_of_literals*2*4) # Contains index and state of excluded literals per clause
 		self.excluded_literals_length_gpu = cuda.mem_alloc(self.number_of_clauses*4) # Number of excluded literals per clause
 
+		literal_indexes = np.arange(self.number_of_literals, dtype=np.uint32)
+		excluded_literals = 
+		for j in range(self.number_of_clauses):
+		np.random.shuffle(literal_indexes)
+		
 		self.clause_weights_gpu = cuda.mem_alloc(self.number_of_outputs*self.number_of_clauses*4)
 		self.class_sum_gpu = cuda.mem_alloc(self.number_of_outputs*4)
 
