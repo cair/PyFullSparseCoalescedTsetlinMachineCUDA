@@ -4,7 +4,7 @@ from time import time
 
 from keras.datasets import mnist
 
-factor = 1.25
+factor = 10
 
 s = 10.0
 
@@ -23,7 +23,7 @@ tm = MultiClassTsetlinMachine(int(factor*2000), T, s)
 print("\nAccuracy over 100 epochs:\n")
 for i in range(100):
 	start_training = time()
-	tm.fit(X_train, Y_train, epochs=1, incremental=True)
+	tm.fit(X_train, Y_train, epochs=1, max_included_literals=16, incremental=True)
 	stop_training = time()
 
 	start_testing = time()
