@@ -120,7 +120,7 @@ code_update = """
 								included_literals[literal*2 + 1]--;
 			                    if (included_literals[literal*2 + 1] < STATES / 2) {
 			                        excluded_literals[(*excluded_literals_length)*2] = included_literals[literal*2];
-			                        excluded_iterals[(*excluded_literals_length)*2 + 1] = included_literals[literal*2 + 1];
+			                        excluded_literals[(*excluded_literals_length)*2 + 1] = included_literals[literal*2 + 1];
 			                        (*excluded_literals_length)++;
 
 			                        (*included_literals_length)--;
@@ -158,7 +158,7 @@ code_update = """
 								included_literals[literal*2 + 1]--;
 			                    if (included_literals[literal*2 + 1] < STATES / 2) {
 			                        excluded_literals[(*excluded_literals_length)*2] = included_literals[literal*2];
-			                        excluded_iterals[(*excluded_literals_length)*2 + 1] = included_literals[literal*2 + 1];
+			                        excluded_literals[(*excluded_literals_length)*2 + 1] = included_literals[literal*2 + 1];
 			                        (*excluded_literals_length)++;
 
 			                        (*included_literals_length)--;
