@@ -103,11 +103,17 @@ class CommonTsetlinMachine():
 
 	def get_state(self):
 		if np.array_equal(self.clause_weights, np.array([])):
-			self.ta_state = np.empty(self.number_of_clauses*self.number_of_ta_chunks*self.number_of_states, dtype=np.uint32)
-			cuda.memcpy_dtoh(self.ta_state, self.ta_state_gpu)
+			self.included_literals = np.empty(self.number_of_clauses*self.number_of_literals*2, dtype=np.uint32)
+			cuda.memcpy_dtoh(self.included_literals, self.included_literals_gpu)
+			self.included_literals_length = np.empty(self.number_of_clauses, dtype=np.uint32)
+			cuda.memcpy_dtoh(self.included_literals_length, self.included_literals_length_gpu)
+			self.excluded_literals_gpu = np.empty(self.number_of_clauses*self.number_of_literals*2, dtype=np.uint32)
+			cuda.memcpy_dtoh(self.excluded_literals, self.excluded_literals_gpu)
+			self.excluded_literals_length_gpu = np.empty(self.number_of_clauses, dtype=np.uint32)
+			cuda.memcpy_dtoh(self.excluded_literals_length, self.excluded_literals_length_gpu)
 			self.clause_weights = np.empty(self.number_of_outputs*self.number_of_clauses, dtype=np.int32)
 			cuda.memcpy_dtoh(self.clause_weights, self.clause_weights_gpu)
-		return((self.ta_state, self.clause_weights, self.number_of_outputs, self.number_of_clauses, self.number_of_literals, self.dim, self.patch_dim, self.number_of_patches, self.number_of_states, self.number_of_ta_chunks, self.append_negated, self.min_y, self.max_y))
+		return(((self.included_literals, self.included_literals_length, self.excluded_literals, self.excluded_literals_length), self.clause_weights, self.number_of_outputs, self.number_of_clauses, self.number_of_literals, self.dim, self.patch_dim, self.number_of_patches, self.number_of_states, self.number_of_ta_chunks, self.append_negated, self.min_y, self.max_y))
 
 	def set_state(self, state):
 		self.number_of_outputs = state[2]
