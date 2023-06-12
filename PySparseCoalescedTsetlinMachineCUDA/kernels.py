@@ -23,7 +23,11 @@
 
 code_header = """
 	#include <curand_kernel.h>
+
+	#define X_CHUNKS (((FEATURES-1)/INT_SIZE + 1))
 	
+	#define CLAUSE_CHUNKS ((CLAUSES-1)/INT_SIZE + 1)
+
 	#define INT_SIZE 32
 """
 
