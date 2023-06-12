@@ -203,14 +203,14 @@ class CommonTsetlinMachine():
 
 		mod_update = SourceModule(parameters + kernels.code_header + kernels.code_update, no_extern_c=True)
 		self.update = mod_update.get_function("update")
-		self.update.prepare("PPPPPPi")
+		self.update.prepare("PPPPPPPPPi")
 
 		self.evaluate_update = mod_update.get_function("evaluate")
 		self.evaluate_update.prepare("PPPP")
 
 		mod_evaluate = SourceModule(parameters + kernels.code_header + kernels.code_evaluate, no_extern_c=True)
 		self.evaluate = mod_evaluate.get_function("evaluate")
-		self.evaluate.prepare("PPPP")
+		self.evaluate.prepare("PPPPPPP")
 
 		encoded_X = np.zeros((self.number_of_patches, self.number_of_ta_chunks), dtype=np.uint32)
 		for patch_coordinate_y in range(self.dim[1] - self.patch_dim[1] + 1):
@@ -287,10 +287,33 @@ class CommonTsetlinMachine():
 				self.encode.prepared_call(self.grid, self.block, self.X_train_indptr_gpu, self.X_train_indices_gpu, self.encoded_X_gpu, np.int32(e), np.int32(self.dim[0]), np.int32(self.dim[1]), np.int32(self.dim[2]), np.int32(self.patch_dim[0]), np.int32(self.patch_dim[1]), np.int32(self.append_negated), np.int32(0))
 				cuda.Context.synchronize()
 
-				self.evaluate_update.prepared_call(self.grid, self.block, self.ta_state_gpu, self.clause_weights_gpu, self.class_sum_gpu, self.encoded_X_gpu)
+				self.evaluate_update.prepared_call(
+					self.grid,
+					self.block,
+					self.included_literals_gpu,
+					self.included_literals_length_gpu,
+					self.excluded_literals_gpu,
+					self.excluded_literals_length_gpu,
+					self.clause_weights_gpu,
+					self.class_sum_gpu,
+					self.encoded_X_gpu
+				)
 				cuda.Context.synchronize()
 
-				self.update.prepared_call(self.grid, self.block, g.state, self.ta_state_gpu, self.clause_weights_gpu, self.class_sum_gpu, self.encoded_X_gpu, self.encoded_Y_gpu, np.int32(e))
+				self.update.prepared_call(
+					self.grid,
+					self.block,
+					g.state,
+					self.included_literals_gpu,
+					self.included_literals_length_gpu,
+					self.excluded_literals_gpu,
+					self.excluded_literals_length_gpu,
+					self.clause_weights_gpu,
+					self.class_sum_gpu,
+					self.encoded_X_gpu,
+					self.encoded_Y_gpu,
+					np.int32(e)
+				)
 				cuda.Context.synchronize()
 
 				self.restore.prepared_call(self.grid, self.block, self.X_train_indptr_gpu, self.X_train_indices_gpu, self.encoded_X_gpu, np.int32(e), np.int32(self.dim[0]), np.int32(self.dim[1]), np.int32(self.dim[2]), np.int32(self.patch_dim[0]), np.int32(self.patch_dim[1]), np.int32(self.append_negated), np.int32(0))
@@ -322,7 +345,17 @@ class CommonTsetlinMachine():
 			self.encode.prepared_call(self.grid, self.block, self.X_test_indptr_gpu, self.X_test_indices_gpu, self.encoded_X_gpu, np.int32(e), np.int32(self.dim[0]), np.int32(self.dim[1]), np.int32(self.dim[2]), np.int32(self.patch_dim[0]), np.int32(self.patch_dim[1]), np.int32(self.append_negated), np.int32(0))
 			cuda.Context.synchronize()
 
-			self.evaluate.prepared_call(self.grid, self.block, self.ta_state_gpu, self.clause_weights_gpu, self.class_sum_gpu, self.encoded_X_gpu)
+			self.evaluate.prepared_call(
+				self.grid,
+				self.block,
+				self.included_literals_gpu,
+				self.included_literals_length_gpu,
+				self.excluded_literals_gpu,
+				self.excluded_literals_length_gpu,
+				self.clause_weights_gpu,
+				self.class_sum_gpu,
+				self.encoded_X_gpu
+			)
 			cuda.Context.synchronize()
 
 			self.restore.prepared_call(self.grid, self.block, self.X_test_indptr_gpu, self.X_test_indices_gpu, self.encoded_X_gpu, np.int32(e), np.int32(self.dim[0]), np.int32(self.dim[1]), np.int32(self.dim[2]), np.int32(self.patch_dim[0]), np.int32(self.patch_dim[1]), np.int32(self.append_negated), np.int32(0))
@@ -653,13 +686,37 @@ class AutoEncoderTsetlinMachine(CommonTsetlinMachine):
                                             target,
                                             int(self.accumulation),
                                             int(self.T),
-                                            int(self.append_negated))
+                                            int(self.append_negated)
+				)
 				cuda.Context.synchronize()
 
-				self.evaluate_update.prepared_call(self.grid, self.block, self.ta_state_gpu, self.clause_weights_gpu, self.class_sum_gpu, self.encoded_X_gpu)
+				self.evaluate_update.prepared_call(
+					self.grid,
+					self.block,
+					self.included_literals_gpu,
+					self.included_literals_length_gpu,
+					self.excluded_literals_gpu,
+					self.excluded_literals_length_gpu,
+					self.clause_weights_gpu,
+					self.class_sum_gpu,
+					self.encoded_X_gpu
+				)
 				cuda.Context.synchronize()
 
-				self.update.prepared_call(self.grid, self.block, g.state, self.ta_state_gpu, self.clause_weights_gpu, self.class_sum_gpu, self.encoded_X_gpu, self.encoded_Y_gpu, np.int32(0))
+				self.update.prepared_call(
+					self.grid,
+					self.block,
+					g.state, 
+					self.included_literals_gpu,
+					self.included_literals_length_gpu,
+					self.excluded_literals_gpu,
+					self.excluded_literals_length_gpu,
+					self.clause_weights_gpu,
+					self.class_sum_gpu,
+					self.encoded_X_gpu,
+					self.encoded_Y_gpu,
+					np.int32(0)
+				)
 				cuda.Context.synchronize()
 
 		self.ta_state = np.array([])
