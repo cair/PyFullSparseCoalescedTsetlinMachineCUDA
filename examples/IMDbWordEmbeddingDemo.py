@@ -69,8 +69,11 @@ def tokenizer(s):
 vectorizer_X = CountVectorizer(tokenizer=tokenizer, lowercase=False, binary=True)
 
 X_train = vectorizer_X.fit_transform(training_documents)
-feature_names = vectorizer_X.get_feature_names_out()
-number_of_features = vectorizer_X.get_feature_names_out().shape[0]
+#feature_names = vectorizer_X.get_feature_names_out()
+#number_of_features = vectorizer_X.get_feature_names_out().shape[0]
+
+feature_names = vectorizer_X.get_feature_names()
+number_of_features = len(feature_names)
 
 target_words = []
 for word in feature_names:
