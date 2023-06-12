@@ -49,9 +49,9 @@ code_update = """
 			output_one_patches_count = 0;
 			for (int patch = 0; patch < PATCHES; ++patch) {		
 				int patch_clause_output = 1;
-				for (int literal = 0; literal < included_literals_length[clause]; ++literal) {
-					int chunk = included_literals[clause*FEATURES*2 + literal*2] / INT_SIZE;
-					int chunk_pos = included_literals[clause*FEATURES*2 + literal*2] % INT_SIZE;
+				for (int literal = 0; literal < *included_literals_length; ++literal) {
+					int chunk = included_literals[literal*2] / INT_SIZE;
+					int chunk_pos = included_literals[literal*2] % INT_SIZE;
 
 					if (!(X[patch*X_CHUNKS + chunk] & (1 << chunk_pos))) {
 						patch_clause_output = 0;
