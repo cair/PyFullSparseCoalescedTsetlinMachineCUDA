@@ -169,20 +169,6 @@ code_update = """
 							}
 						}
 
-						//int number_of_updates = 1.0*(*excluded_literals_length)/S;
-						//for (int k = 0; k < number_of_updates; ++k) {
-						//	int literal = (curand(localState) % (*excluded_literals_length));
-						//	if (excluded_literals[literal*2 + 1] > 0) {
-						//		excluded_literals[literal*2 + 1]--;
-
-						//		if (excluded_literals[literal*2 + 1] <= ABSORBING_STATE) {
-						//		 	(*excluded_literals_length)--;
-			            //            excluded_literals[literal*2] = excluded_literals[(*excluded_literals_length)*2];       
-			            //            excluded_literals[literal*2 + 1] = excluded_literals[(*excluded_literals_length)*2 + 1];
-						//		}
-                        //    }
-						//}
-
 						literal = (*excluded_literals_length);
 						while (literal--) {
 						 	if (curand_uniform(localState) <= 1.0/S && excluded_literals[literal*2 + 1] > 0) {
