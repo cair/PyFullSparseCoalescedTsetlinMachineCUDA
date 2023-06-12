@@ -212,8 +212,6 @@ code_update = """
 		__global__ void evaluate(
 			unsigned int *included_literals,
 			unsigned int *included_literals_length,
-			unsigned int *excluded_literals,
-			unsigned int *excluded_literals_length,
 			int *clause_weights,
 			int *class_sum,
 			int *X
@@ -324,8 +322,6 @@ code_evaluate = """
 		__global__ void evaluate(
 			unsigned int *included_literals,
 			unsigned int *included_literals_length,
-			unsigned int *excluded_literals,
-			unsigned int *excluded_literals_length,
 			int *clause_weights,
 			int *class_sum,
 			int *X
