@@ -116,7 +116,7 @@ code_update = """
 								if (included_literals[literal*2 + 1] < STATES - 1) {
 									included_literals[literal*2 + 1]++;
 								}
-							} else if (curand_uniform(localState) <= 1.0/s) {
+							} else if (curand_uniform(localState) <= 1.0/S) {
 								included_literals[literal*2 + 1]--;
 			                    if (included_literals[literal*2 + 1] < STATES / 2) {
 			                        excluded_literals[(*excluded_literals_length)*2] = included_literals[literal*2];
@@ -147,14 +147,14 @@ code_update = """
 			                        excluded_literals[literals*2] = excluded_literals[(*excluded_literals_length)*2];       
 			                        excluded_literals[literals*2 + 1] = excluded_literals[(*excluded_literals_length)*2 + 1];
 		                    	}
-							} else if (curand_uniform(localState) <= 1.0/s && excluded_literals[literal*2 + 1] > 0) {
+							} else if (curand_uniform(localState) <= 1.0/S && excluded_literals[literal*2 + 1] > 0) {
 								excluded_literals[literal*2 + 1]--;
 							}
 						}
 					} else {
 						int literal = (*included_literals_length);
 						while (literal--) {
-							if (curand_uniform(localState) <= 1.0/s) {
+							if (curand_uniform(localState) <= 1.0/S) {
 								included_literals[literal*2 + 1]--;
 			                    if (included_literals[literal*2 + 1] < STATES / 2) {
 			                        excluded_literals[(*excluded_literals_length)*2] = included_literals[literal*2];
@@ -170,7 +170,7 @@ code_update = """
 
 						literal = (*excluded_literals_length);
 						while (literal--) {
-							if (curand_uniform(localState) <= 1.0/s && excluded_literals[literal*2 + 1] > 0) {
+							if (curand_uniform(localState) <= 1.0/S && excluded_literals[literal*2 + 1] > 0) {
 								excluded_literals[literal*2 + 1]--;
 							}
 						}
