@@ -169,12 +169,20 @@ code_update = """
 							}
 						}
 
-						literal = (*excluded_literals_length);
-						while (literal--) {
-							if (curand_uniform(localState) <= 1.0/S && excluded_literals[literal*2 + 1] > 0) {
+						int number_of_updates = 1.0*(*excluded_literals_length)/S
+						for (int k = 0; k < number_of_updates; ++k) {
+							int literal = (curand(&localState) % (*excluded_literals_length));
+							if (excluded_literals[literal*2 + 1] > 0) {
 								excluded_literals[literal*2 + 1]--;
 							}
 						}
+						
+						# literal = (*excluded_literals_length);
+						# while (literal--) {
+						# 	if (curand_uniform(localState) <= 1.0/S && excluded_literals[literal*2 + 1] > 0) {
+						# 		excluded_literals[literal*2 + 1]--;
+						# 	}
+						# }
 					}
 				} else if (target*sign < 0 && clause_output) {
 					// Type II Feedback
