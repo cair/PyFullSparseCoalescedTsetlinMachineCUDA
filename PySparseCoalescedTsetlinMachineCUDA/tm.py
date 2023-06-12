@@ -45,6 +45,7 @@ class CommonTsetlinMachine():
 			q=1.0,
 			max_included_literals=None,
 			boost_true_positive_feedback=1,
+			absorbing_state = -1,
 			number_of_states=256,
 			append_negated=True,
 			grid=(16*13,1,1),
@@ -60,6 +61,7 @@ class CommonTsetlinMachine():
 		self.q = q
 		self.max_included_literals = max_included_literals
 		self.boost_true_positive_feedback = boost_true_positive_feedback
+		self.absorbing_state = absorbing_state
 		self.append_negated = append_negated
 		self.grid = grid
 		self.block = block
@@ -154,6 +156,7 @@ class CommonTsetlinMachine():
 #define FEATURES %d
 #define STATE_BITS %d
 #define BOOST_TRUE_POSITIVE_FEEDBACK %d
+#define ABSORBING_STATE %d
 #define S %f
 #define THRESHOLD %d
 
@@ -162,7 +165,7 @@ class CommonTsetlinMachine():
 #define PATCHES %d
 
 #define NUMBER_OF_EXAMPLES %d
-		""" % (self.number_of_outputs, self.number_of_clauses, self.number_of_literals, self.number_of_states, self.boost_true_positive_feedback, self.s, self.T, self.negative_clauses, self.number_of_patches, number_of_examples)
+		""" % (self.number_of_outputs, self.number_of_clauses, self.number_of_literals, self.number_of_states, self.boost_true_positive_feedback, self.absorbing_state, self.s, self.T, self.negative_clauses, self.number_of_patches, number_of_examples)
 
 		mod = SourceModule(parameters + kernels.code_header + kernels.code_transform, no_extern_c=True)
 		transform = mod.get_function("transform")
@@ -193,6 +196,7 @@ class CommonTsetlinMachine():
 #define FEATURES %d
 #define STATES %d
 #define BOOST_TRUE_POSITIVE_FEEDBACK %d
+#define ABSORBING STATE %d
 #define S %f
 #define THRESHOLD %d
 #define Q %f
@@ -200,7 +204,7 @@ class CommonTsetlinMachine():
 #define NEGATIVE_CLAUSES %d
 #define PATCHES %d
 #define NUMBER_OF_EXAMPLES %d
-""" % (self.number_of_outputs, self.number_of_clauses, self.number_of_literals, self.number_of_states, self.boost_true_positive_feedback, self.s, self.T, self.q, self.max_included_literals, self.negative_clauses, self.number_of_patches, X.shape[0])
+""" % (self.number_of_outputs, self.number_of_clauses, self.number_of_literals, self.number_of_states, self.boost_true_positive_feedback, self.absorbing_state, self.s, self.T, self.q, self.max_included_literals, self.negative_clauses, self.number_of_patches, X.shape[0])
 
 		mod_prepare = SourceModule(parameters + kernels.code_header + kernels.code_prepare, no_extern_c=True)
 		self.prepare = mod_prepare.get_function("prepare")
@@ -386,12 +390,25 @@ class MultiClassConvolutionalTsetlinMachine2D(CommonTsetlinMachine):
 			q=1.0,
 			max_included_literals=None,
 			boost_true_positive_feedback=1,
+			absorbing_state=-1,
 			number_of_states=256,
 			append_negated=True,
 			grid=(16*13,1,1),
 			block=(128,1,1)
 	):
-		super().__init__(number_of_clauses, T, s, q=q, max_included_literals=max_included_literals, boost_true_positive_feedback=boost_true_positive_feedback, number_of_states=number_of_states, append_negated=append_negated, grid=grid, block=block)
+		super().__init__(
+			number_of_clauses,
+			T,
+			s,
+			q=q,
+			max_included_literals=max_included_literals,
+			boost_true_positive_feedback=boost_true_positive_feedback,
+			absorbing_state=absorbing_state,
+			number_of_states=number_of_states,
+			append_negated=append_negated,
+			grid=grid,
+			block=block
+		)
 		self.dim = dim
 		self.patch_dim = patch_dim
 		self.negative_clauses = 1
@@ -431,12 +448,13 @@ class MultiOutputConvolutionalTsetlinMachine2D(CommonTsetlinMachine):
 			q=1.0,
 			max_included_literals=None,
 			boost_true_positive_feedback=1,
+			absorbing_state=-1,
 			number_of_states=256,
 			append_negated=True,
 			grid=(16*13,1,1),
 			block=(128,1,1)
 	):
-		super().__init__(number_of_clauses, T, s, q=q, max_included_literals=max_included_literals, boost_true_positive_feedback=boost_true_positive_feedback, number_of_states=number_of_states, append_negated=append_negated, grid=grid, block=block)
+		super().__init__(number_of_clauses, T, s, q=q, max_included_literals=max_included_literals, boost_true_positive_feedback=boost_true_positive_feedback, absorbing_state=absorbing_state, number_of_states=number_of_states, append_negated=append_negated, grid=grid, block=block)
 		self.patch_dim = patch_dim
 		self.negative_clauses = 1
 
@@ -465,12 +483,13 @@ class MultiOutputTsetlinMachine(CommonTsetlinMachine):
 			q=1.0,
 			max_included_literals=None,
 			boost_true_positive_feedback=1,
+			absorbing_state=-1,
 			number_of_states=256,
 			append_negated=True,
 			grid=(16*13,1,1),
 			block=(128,1,1)
 	):
-		super().__init__(number_of_clauses, T, s, q=q, max_included_literals=max_included_literals, boost_true_positive_feedback=boost_true_positive_feedback, number_of_states=number_of_states, append_negated=append_negated, grid=grid, block=block)
+		super().__init__(number_of_clauses, T, s, q=q, max_included_literals=max_included_literals, boost_true_positive_feedback=boost_true_positive_feedback, absorbing_state=absorbing_state, number_of_states=number_of_states, append_negated=append_negated, grid=grid, block=block)
 		self.negative_clauses = 1
 
 	def fit(self, X, Y, epochs=100, incremental=False):
@@ -503,12 +522,13 @@ class MultiClassTsetlinMachine(CommonTsetlinMachine):
 			q=1.0,
 			max_included_literals=None,
 			boost_true_positive_feedback=1,
+			absorbing_state=-1,
 			number_of_states=256,
 			append_negated=True,
 			grid=(16*13,1,1),
 			block=(128,1,1)
 	):
-		super().__init__(number_of_clauses, T, s, q=q, max_included_literals=max_included_literals, boost_true_positive_feedback=boost_true_positive_feedback, number_of_states=number_of_states, append_negated=append_negated, grid=grid, block=block)
+		super().__init__(number_of_clauses, T, s, q=q, max_included_literals=max_included_literals, boost_true_positive_feedback=boost_true_positive_feedback, absorbing_state=absorbing_state, number_of_states=number_of_states, append_negated=append_negated, grid=grid, block=block)
 		self.negative_clauses = 1
 
 	def fit(self, X, Y, epochs=100, incremental=False):
@@ -546,12 +566,13 @@ class TsetlinMachine(CommonTsetlinMachine):
 			q=1.0,
 			max_included_literals=None,
 			boost_true_positive_feedback=1,
+			absorbing_state=-1,
 			number_of_states=256,
 			append_negated=True,
 			grid=(16*13,1,1),
 			block=(128,1,1)
 	):
-		super().__init__(number_of_clauses, T, s, q=q, max_included_literals=max_included_literals, boost_true_positive_feedback=boost_true_positive_feedback, number_of_states=number_of_states, append_negated=append_negated, grid=grid, block=block)
+		super().__init__(number_of_clauses, T, s, q=q, max_included_literals=max_included_literals, boost_true_positive_feedback=boost_true_positive_feedback, absorbing_state=absorbing_state, number_of_states=number_of_states, append_negated=append_negated, grid=grid, block=block)
 		self.negative_clauses = 1
 
 	def fit(self, X, Y, epochs=100, incremental=False):
@@ -584,12 +605,13 @@ class RegressionTsetlinMachine(CommonTsetlinMachine):
 			s,
 			max_included_literals=None,
 			boost_true_positive_feedback=1,
+			absorbing_state=-1,
 			number_of_states=256,
 			append_negated=True,
 			grid=(16*13,1,1),
 			block=(128,1,1)
 	):
-		super().__init__(number_of_clauses, T, s, max_included_literals=max_included_literals, boost_true_positive_feedback=boost_true_positive_feedback, number_of_states=number_of_states, append_negated=append_negated, grid=grid, block=block)
+		super().__init__(number_of_clauses, T, s, max_included_literals=max_included_literals, boost_true_positive_feedback=boost_true_positive_feedback, absorbing_state=absorbing_state, number_of_states=number_of_states, append_negated=append_negated, grid=grid, block=block)
 		self.negative_clauses = 0
 
 	def fit(self, X, Y, epochs=100, incremental=False):
@@ -623,12 +645,13 @@ class AutoEncoderTsetlinMachine(CommonTsetlinMachine):
 			max_included_literals=None,
 			accumulation = 1,
 			boost_true_positive_feedback=1,
+			absorbing_state=-1,
 			number_of_states=256,
 			append_negated=True,
 			grid=(16*13,1,1),
 			block=(128,1,1)
 	):
-		super().__init__(number_of_clauses, T, s, q=q, max_included_literals=max_included_literals, boost_true_positive_feedback=boost_true_positive_feedback, number_of_states=number_of_states, append_negated=append_negated, grid=grid, block=block)
+		super().__init__(number_of_clauses, T, s, q=q, max_included_literals=max_included_literals, boost_true_positive_feedback=boost_true_positive_feedback, absorbing_state=absorbing_state, number_of_states=number_of_states, append_negated=append_negated, grid=grid, block=block)
 		self.negative_clauses = 1
 
 		self.active_output = np.array(active_output).astype(np.uint32)
