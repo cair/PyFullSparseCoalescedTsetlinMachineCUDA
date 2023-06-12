@@ -124,8 +124,8 @@ code_update = """
 			                        (*excluded_literals_length)++;
 
 			                        (*included_literals_length)--;
-			                        included_literals[literals*2] = included_literals[(*included_literals_length)*2];       
-			                        included_literals[literals*2 + 1] = included_literals[(*included_literals_length)*2 + 1];
+			                        included_literals[literal*2] = included_literals[(*included_literals_length)*2];       
+			                        included_literals[literal*2 + 1] = included_literals[(*included_literals_length)*2 + 1];
 			                    }
 							}
 						}
@@ -144,8 +144,8 @@ code_update = """
 			                        (*included_literals_length)++;
 
 			                        (*excluded_literals_length)--;
-			                        excluded_literals[literals*2] = excluded_literals[(*excluded_literals_length)*2];       
-			                        excluded_literals[literals*2 + 1] = excluded_literals[(*excluded_literals_length)*2 + 1];
+			                        excluded_literals[literal*2] = excluded_literals[(*excluded_literals_length)*2];       
+			                        excluded_literals[literal*2 + 1] = excluded_literals[(*excluded_literals_length)*2 + 1];
 		                    	}
 							} else if (curand_uniform(localState) <= 1.0/S && excluded_literals[literal*2 + 1] > 0) {
 								excluded_literals[literal*2 + 1]--;
@@ -162,8 +162,8 @@ code_update = """
 			                        (*excluded_literals_length)++;
 
 			                        (*included_literals_length)--;
-			                        included_literals[literals*2] = included_literals[(*included_literals_length)*2];       
-			                        included_literals[literals*2 + 1] = included_literals[(*included_literals_length)*2 + 1];
+			                        included_literals[literal*2] = included_literals[(*included_literals_length)*2];       
+			                        included_literals[literal*2 + 1] = included_literals[(*included_literals_length)*2 + 1];
 			                    }
 							}
 						}
@@ -199,8 +199,8 @@ code_update = """
 		                        (*included_literals_length)++;
 
 		                        (*excluded_literals_length)--;
-		                        excluded_literals[literals*2] = excluded_literals[(*excluded_literals_length)*2];       
-		                        excluded_literals[literals*2 + 1] = excluded_literals[(*excluded_literals_length)*2 + 1];
+		                        excluded_literals[literal*2] = excluded_literals[(*excluded_literals_length)*2];       
+		                        excluded_literals[literal*2 + 1] = excluded_literals[(*excluded_literals_length)*2 + 1];
 	                    	}
 						}
 					}
