@@ -177,7 +177,7 @@ code_update = """
 						 		if (excluded_literals[literal*2 + 1] > 0) {
 									excluded_literals[literal*2 + 1]--;
 
-									if (excluded_literals[literal*2 + 1] <= ABSORBING_STATE) {
+									if (((int)excluded_literals[literal*2 + 1]) <= ABSORBING_STATE) {
 									 	(*excluded_literals_length)--;
 				                        excluded_literals[literal*2] = excluded_literals[(*excluded_literals_length)*2];       
 				                        excluded_literals[literal*2 + 1] = excluded_literals[(*excluded_literals_length)*2 + 1];
