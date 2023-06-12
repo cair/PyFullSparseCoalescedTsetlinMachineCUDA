@@ -283,8 +283,6 @@ code_update = """
 					&localState,
 					included_literals,
 					included_literals_length,
-					excluded_literals,
-					excluded_literals_length,
 					&clause_output,
 					&clause_patch,
 					X
