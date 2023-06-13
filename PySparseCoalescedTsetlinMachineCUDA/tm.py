@@ -49,8 +49,8 @@ class CommonTsetlinMachine():
 			literal_sampling = 1.0,
 			number_of_states=256,
 			append_negated=True,
-			grid=(16*13,1,1),
-			block=(128,1,1)
+			grid=(16*13*4,1,1),
+			block=(256,1,1)
 	):
 		print("Initialization of sparse structure.")
 
