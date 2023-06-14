@@ -17,8 +17,8 @@ epochs = 100
 hypervector_size = 1024
 bits = 5
 
-clauses = 10000
-T = 8000
+clauses = 20000
+T = int(clauses*0.8)
 s = 10.0
 
 NUM_WORDS=10000
