@@ -358,7 +358,7 @@ code_evaluate = """
 					continue;
 				}
 
-				unsigned int clause_output;
+				unsigned int clause_output = 0;
 				for (int patch_chunk = 0; patch_chunk < PATCH_CHUNKS-1; ++patch_chunk) {
 					clause_output = (~(0U));
 					for (int literal = 0; literal < included_literals_length[clause]; ++literal) {
