@@ -10,7 +10,7 @@ from scipy.sparse import csr_matrix, csc_matrix, lil_matrix
 
 from PySparseCoalescedTsetlinMachineCUDA.tm import MultiClassConvolutionalTsetlinMachine2D, MultiClassTsetlinMachine
 
-maxlen = 1000
+maxlen = 250
 
 epochs = 100
 
