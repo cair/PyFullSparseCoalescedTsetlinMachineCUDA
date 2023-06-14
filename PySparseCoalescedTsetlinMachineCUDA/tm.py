@@ -55,7 +55,7 @@ class CommonTsetlinMachine():
 		print("Initialization of sparse structure.")
 
 		self.number_of_clauses = number_of_clauses
-		self.number_of_clause_chunks = (number_of_clauses-1)/32 + 1
+		self.number_of_clause_chunks = (number_of_clauses-1)//32 + 1
 		self.number_of_states = number_of_states
 		self.T = int(T)
 		self.s = s
@@ -81,6 +81,13 @@ class CommonTsetlinMachine():
 		
 		self.restore = mod_encode.get_function("restore")
 		self.restore.prepare("PPPiiiiiiii")
+
+		self.encode_score = mod_encode.get_function("encode_score")
+		self.encode_score.prepare("PPPiiiiiiii")
+		
+		self.restore_score = mod_encode.get_function("restore_score")
+		self.restore_score.prepare("PPPiiiiiiii")
+
 
 		self.produce_autoencoder_examples= mod_encode.get_function("produce_autoencoder_example")
 		self.produce_autoencoder_examples.prepare("PPiPPiPPiPPiiii")
@@ -191,7 +198,7 @@ class CommonTsetlinMachine():
 			self.max_included_literals = self.number_of_literals
 
 		self.number_of_patches = int((self.dim[0] - self.patch_dim[0] + 1)*(self.dim[1] - self.patch_dim[1] + 1))
-		self.number_of_ta_chunks = int((self.number_of_literals-1)/32 + 1)
+		self.number_of_ta_chunks = int((self.number_of_literals-1)//32 + 1)
 
 		parameters = """
 #define CLASSES %d
@@ -264,6 +271,39 @@ class CommonTsetlinMachine():
 		encoded_X = encoded_X.reshape(-1)
 		self.encoded_X_gpu = cuda.mem_alloc(encoded_X.nbytes)
 		cuda.memcpy_htod(self.encoded_X_gpu, encoded_X)
+
+		encoded_X_score = np.zeros(((self.number_of_patches-1)//32 + 1, self.number_of_literals), dtype=np.uint32)
+
+		if self.append_negated:
+			for p_chunk in range((self.number_of_patches-1)//32 + 1):
+				for k in range(self.number_of_literals//2, self.number_of_literals):
+					encoded_X_score[p_chunk, k] = (~0) 
+
+		for patch_coordinate_y in range(self.dim[1] - self.patch_dim[1] + 1):
+			for patch_coordinate_x in range(self.dim[0] - self.patch_dim[0] + 1):
+				p = patch_coordinate_y * (self.dim[0] - self.patch_dim[0] + 1) + patch_coordinate_x
+				p_chunk = p // 32
+				p_pos = p % 32
+
+				for y_threshold in range(self.dim[1] - self.patch_dim[1]):
+					patch_pos = y_threshold
+					if patch_coordinate_y > y_threshold:
+						encoded_X_score[p_chunk, patch_pos] |= (1 << p_pos)
+
+						if self.append_negated:
+							encoded_X_score[p_chunk, patch_pos + self.number_of_literals//2] &= ~(1 << p_pos)
+
+				for x_threshold in range(self.dim[0] - self.patch_dim[0]):
+					patch_pos = (self.dim[1] - self.patch_dim[1]) + x_threshold
+					if patch_coordinate_x > x_threshold:
+						encoded_X_score[p_chunk, patch_pos] |= (1 << p_pos)
+
+						if self.append_negated:
+							encoded_X_score[p_chunk, patch_pos + self.number_of_literals//2] &= ~(1 << p_pos)
+
+		encoded_X_score = encoded_X_score.reshape(-1)
+		self.encoded_X_score_gpu = cuda.mem_alloc(encoded_X_score.nbytes)
+		cuda.memcpy_htod(self.encoded_X_score_gpu, encoded_X_score)
 
 		self.initialized = True
 
@@ -356,12 +396,12 @@ class CommonTsetlinMachine():
 		for e in range(X.shape[0]):
 			cuda.memcpy_htod(self.class_sum_gpu, class_sum[e,:])
 
-			self.encode.prepared_call(
+			self.encode_score.prepared_call(
 				self.grid,
 				self.block,
 				self.X_test_indptr_gpu,
 				self.X_test_indices_gpu,
-				self.encoded_X_gpu,
+				self.encoded_X_score_gpu,
 				np.int32(e),
 				np.int32(self.dim[0]),
 				np.int32(self.dim[1]),
@@ -382,16 +422,16 @@ class CommonTsetlinMachine():
 				self.excluded_literals_length_gpu,
 				self.clause_weights_gpu,
 				self.class_sum_gpu,
-				self.encoded_X_gpu
+				self.encoded_X_score_gpu
 			)
 			cuda.Context.synchronize()
 
-			self.restore.prepared_call(
+			self.restore_score.prepared_call(
 				self.grid,
 				self.block,
 				self.X_test_indptr_gpu,
 				self.X_test_indices_gpu,
-				self.encoded_X_gpu,
+				self.encoded_X_score_gpu,
 				np.int32(e),
 				np.int32(self.dim[0]),
 				np.int32(self.dim[1]),
