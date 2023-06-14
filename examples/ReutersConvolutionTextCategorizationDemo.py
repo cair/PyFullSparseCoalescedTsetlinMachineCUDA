@@ -1,8 +1,7 @@
 import numpy as np
-import keras
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
-from keras.datasets import imdb
+from tf.keras.datasets import reuters
 from time import time
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -27,12 +26,12 @@ INDEX_FROM=2
 
 print("Downloading dataset...")
 
-train,test = keras.datasets.reuters.load_data(num_words=NUM_WORDS, maxlen=maxlen, index_from=INDEX_FROM)
+train,test = reuters.load_data(num_words=NUM_WORDS, maxlen=maxlen, index_from=INDEX_FROM)
 
 train_x, train_y = train
 test_x, test_y = test
 
-word_to_id = keras.datasets.reuters.get_word_index()
+word_to_id = reuters.get_word_index()
 word_to_id = {k:(v+INDEX_FROM) for k,v in word_to_id.items()}
 word_to_id["<PAD>"] = 0
 word_to_id["<START>"] = 1
