@@ -357,8 +357,8 @@ class CommonTsetlinMachine():
 				self.encode_score.prepared_call(
 				self.grid,
 				self.block,
-				self.X_test_indptr_gpu,
-				self.X_test_indices_gpu,
+				self.X_train_indptr_gpu,
+				self.X_train_indices_gpu,
 				self.encoded_X_score_gpu,
 					np.int32(e),
 					np.int32(self.dim[0]),
@@ -391,8 +391,8 @@ class CommonTsetlinMachine():
 				self.restore_score.prepared_call(
 					self.grid,
 					self.block,
-					self.X_test_indptr_gpu,
-					self.X_test_indices_gpu,
+					self.X_train_indptr_gpu,
+					self.X_train_indices_gpu,
 					self.encoded_X_score_gpu,
 					np.int32(e),
 					np.int32(self.dim[0]),
