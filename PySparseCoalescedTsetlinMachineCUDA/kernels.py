@@ -279,6 +279,7 @@ code_update = """
 			int *clause_weights,
 			int *class_sum,
 			int *X,
+			int *X_packed,
 			int *y,
 			int example
 		)
