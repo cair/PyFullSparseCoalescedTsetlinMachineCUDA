@@ -118,6 +118,9 @@ code_update = """
 				return;
 			}
 
+			unsigned int chunk = (clause_patch / INT_SIZE)*FEATURES;
+			unsigned int pos = 1U << (clause_patch % INT_SIZE);
+
 			int sign = (*clause_weight >= 0) - (*clause_weight < 0);
 		
 			int absolute_prediction_error = abs(y - class_sum);
@@ -132,10 +135,7 @@ code_update = """
 					if (clause_output && (*included_literals_length) <= MAX_INCLUDED_LITERALS) {
 						int literal = (*included_literals_length);
 						while (literal--) {
-							int chunk = included_literals[literal*2] / INT_SIZE;
-							int chunk_pos = included_literals[literal*2] % INT_SIZE;
-
-							if (X[clause_patch*X_CHUNKS + chunk] & (1 << chunk_pos)) {
+							if (X[chunk + included_literals[literal*2]] & pos) {
 								if (included_literals[literal*2 + 1] < STATES - 1) {
 									included_literals[literal*2 + 1]++;
 								}
@@ -155,10 +155,7 @@ code_update = """
 
 						literal = (*excluded_literals_length);
 						while (literal--) {
-							int chunk = excluded_literals[literal*2] / INT_SIZE;
-							int chunk_pos = excluded_literals[literal*2] % INT_SIZE;
-
-							if (X[clause_patch*X_CHUNKS + chunk] & (1 << chunk_pos)) {
+							if (X[chunk + included_literals[literal*2]] & pos) {
 								excluded_literals[literal*2 + 1]++;
 
 								if (excluded_literals[literal*2 + 1] >= STATES / 2) {
@@ -220,10 +217,7 @@ code_update = """
 
 					int literal = (*excluded_literals_length);
 					while (literal--) {
-						int chunk = excluded_literals[literal*2] / INT_SIZE;
-						int chunk_pos = excluded_literals[literal*2] % INT_SIZE;
-
-						if (!(X[clause_patch*X_CHUNKS + chunk] & (1 << chunk_pos))) {
+						if (!(X[chunk + included_literals[literal*2]] & pos)) {
 							excluded_literals[literal*2 + 1]++;
 
 							if (excluded_literals[literal*2 + 1] >= STATES / 2) {
@@ -294,7 +288,6 @@ code_update = """
 			int *clause_weights,
 			int *class_sum,
 			int *X,
-			int *X_packed,
 			int *y,
 			int example
 		)
@@ -320,7 +313,7 @@ code_update = """
 					included_literals_length,
 					&clause_output,
 					&clause_patch,
-					X_packed
+					X
 				);
 
 				for (unsigned long long class_id = 0; class_id < CLASSES; ++class_id) {
