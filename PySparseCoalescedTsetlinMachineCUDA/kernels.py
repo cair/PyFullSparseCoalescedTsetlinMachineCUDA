@@ -60,14 +60,14 @@ code_update = """
 			unsigned int patch_clause_output = 0;
 			for (int patch_chunk = 0; patch_chunk < PATCH_CHUNKS-1; ++patch_chunk) {
 				patch_clause_output = (~(0U));
-				for (int literal = 0; literal < included_literals_length[clause]; ++literal) {
+				for (int literal = 0; literal < included_literals_length; ++literal) {
 					patch_clause_output &= X[patch_chunk*FEATURES + included_literals[literal*2]];
 				}
 
 				if (patch_clause_output) {
 					for (int pos = 0; pos < INT_SIZE; ++pos) {
 						if (patch_clause_output & (1 << pos)) {
-							output_one_patches[output_one_patches_count] = patch;
+							output_one_patches[output_one_patches_count] = patch_chunk*INT_SIZE + pos;
 							output_one_patches_count++;
 						}
 					}
@@ -75,14 +75,14 @@ code_update = """
 			}
 
 			patch_clause_output = FILTER;
-			for (int literal = 0; literal < included_literals_length[clause]; ++literal) {
+			for (int literal = 0; literal < included_literals_length; ++literal) {
 				patch_clause_output &= X[(PATCH_CHUNKS-1)*FEATURES + included_literals[literal*2]];
 			}
 
 			if (patch_clause_output) {
 				for (int pos = 0; pos < INT_SIZE; ++pos) {
 					if (patch_clause_output & (1 << pos)) {
-						output_one_patches[output_one_patches_count] = patch;
+						output_one_patches[output_one_patches_count] = (PATCH_CHUNK-1)*INT_SIZE + pos;
 						output_one_patches_count++;
 					}
 				}
