@@ -242,21 +242,22 @@ code_update = """
 			int stride = blockDim.x * gridDim.x;
 
 			for (int clause = index; clause < CLAUSES; clause += stride) {
-				int clause_output;
-				for (int patch = 0; patch < PATCHES; ++patch) {
-					clause_output = 1;
+				unsigned int clause_output = 0;
+				for (int patch_chunk = 0; patch_chunk < PATCH_CHUNKS-1; ++patch_chunk) {
+					clause_output = (~(0U));
 					for (int literal = 0; literal < included_literals_length[clause]; ++literal) {
-						int chunk = included_literals[clause*FEATURES*2 + literal*2] / INT_SIZE;
-						int chunk_pos = included_literals[clause*FEATURES*2 + literal*2] % INT_SIZE;
-
-						if (!(X[patch*X_CHUNKS + chunk] & (1 << chunk_pos))) {
-							clause_output = 0;
-							break;
-						}
+						clause_output &= X[patch_chunk*FEATURES + included_literals[clause*FEATURES*2 + literal*2]];
 					}
 
 					if (clause_output) {
 						break;
+					}
+				}
+
+				if (!clause_output) {
+					clause_output = FILTER;
+					for (int literal = 0; literal < included_literals_length[clause]; ++literal) {
+						clause_output &= X[(PATCH_CHUNKS-1)*FEATURES + included_literals[clause*FEATURES*2 + literal*2]];
 					}
 				}
 
