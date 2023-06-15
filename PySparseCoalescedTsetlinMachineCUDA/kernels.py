@@ -56,21 +56,35 @@ code_update = """
 
 			// Evaluate each patch (convolution)
 			output_one_patches_count = 0;
-			for (int patch = 0; patch < PATCHES; ++patch) {		
-				int patch_clause_output = 1;
-				for (int literal = 0; literal < *included_literals_length; ++literal) {
-					int chunk = included_literals[literal*2] / INT_SIZE;
-					int chunk_pos = included_literals[literal*2] % INT_SIZE;
 
-					if (!(X[patch*X_CHUNKS + chunk] & (1 << chunk_pos))) {
-						patch_clause_output = 0;
-						break;
-					}
+			unsigned int patch_clause_output = 0;
+			for (int patch_chunk = 0; patch_chunk < PATCH_CHUNKS-1; ++patch_chunk) {
+				patch_clause_output = (~(0U));
+				for (int literal = 0; literal < included_literals_length[clause]; ++literal) {
+					patch_clause_output &= X[patch_chunk*FEATURES + included_literals[literal*2]];
 				}
 
 				if (patch_clause_output) {
-					output_one_patches[output_one_patches_count] = patch;
-					output_one_patches_count++;
+					for (int pos = 0; pos < INT_SIZE; ++pos) {
+						if (patch_clause_output & (1 << pos)) {
+							output_one_patches[output_one_patches_count] = patch;
+							output_one_patches_count++;
+						}
+					}
+				}
+			}
+
+			patch_clause_output = FILTER;
+			for (int literal = 0; literal < included_literals_length[clause]; ++literal) {
+				patch_clause_output &= X[(PATCH_CHUNKS-1)*FEATURES + included_literals[literal*2]];
+			}
+
+			if (patch_clause_output) {
+				for (int pos = 0; pos < INT_SIZE; ++pos) {
+					if (patch_clause_output & (1 << pos)) {
+						output_one_patches[output_one_patches_count] = patch;
+						output_one_patches_count++;
+					}
 				}
 			}
 		
@@ -306,7 +320,7 @@ code_update = """
 					included_literals_length,
 					&clause_output,
 					&clause_patch,
-					X
+					X_packed
 				);
 
 				for (unsigned long long class_id = 0; class_id < CLASSES; ++class_id) {
