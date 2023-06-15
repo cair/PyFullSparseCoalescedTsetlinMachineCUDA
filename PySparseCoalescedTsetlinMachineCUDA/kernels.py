@@ -82,7 +82,7 @@ code_update = """
 			if (patch_clause_output) {
 				for (int pos = 0; pos < INT_SIZE; ++pos) {
 					if (patch_clause_output & (1 << pos)) {
-						output_one_patches[output_one_patches_count] = (PATCH_CHUNK-1)*INT_SIZE + pos;
+						output_one_patches[output_one_patches_count] = (PATCH_CHUNKS-1)*INT_SIZE + pos;
 						output_one_patches_count++;
 					}
 				}
