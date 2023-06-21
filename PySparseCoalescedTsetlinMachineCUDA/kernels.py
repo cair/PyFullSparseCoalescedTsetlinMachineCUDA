@@ -217,7 +217,7 @@ code_update = """
 						}
 					#endif
 
-					int literal = (*excluded_literals_length);
+					unsigned int literal = (*excluded_literals_length);
 					while (literal--) {
 						if (!(X[chunk + excluded_literals[literal*2]] & pos)) {
 							excluded_literals[literal*2 + 1]++;
