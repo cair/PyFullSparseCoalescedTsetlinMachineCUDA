@@ -218,7 +218,7 @@ code_update = """
 
 					int literal = (*excluded_literals_length);
 					while (literal--) {
-						if (!(X[chunk + included_literals[literal*2]] & pos)) {
+						if (!(X[chunk + excluded_literals[literal*2]] & pos)) {
 							excluded_literals[literal*2 + 1]++;
 
 							if (excluded_literals[literal*2 + 1] >= STATES / 2) {
