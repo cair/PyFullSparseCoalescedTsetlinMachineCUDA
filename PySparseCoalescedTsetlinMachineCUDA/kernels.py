@@ -133,46 +133,47 @@ code_update = """
 					// Type I Feedback
 
 					if (clause_output && (*included_literals_length) <= MAX_INCLUDED_LITERALS) {
-						int literal = (*included_literals_length);
-						while (literal--) {
-							if (X[chunk + included_literals[literal*2]] & pos) {
-								if (included_literals[literal*2 + 1] < STATES - 1) {
-									included_literals[literal*2 + 1]++;
+						unsigned int literal_included = (*included_literals_length);
+						unsigned int literal_excluded = (*excluded_literals_length);
+
+						while (literal_included--) {
+							if (X[chunk + included_literals[literal_included*2]] & pos) {
+								if (included_literals[literal_included*2 + 1] < STATES - 1) {
+									included_literals[literal_included*2 + 1]++;
 								}
 							} else if (curand_uniform(localState) <= 1.0/S) {
-								included_literals[literal*2 + 1]--;
-			                    if (included_literals[literal*2 + 1] < STATES / 2) {
-			                        excluded_literals[(*excluded_literals_length)*2] = included_literals[literal*2];
-			                        excluded_literals[(*excluded_literals_length)*2 + 1] = included_literals[literal*2 + 1];
+								included_literals[literal_included*2 + 1]--;
+			                    if (included_literals[literal_included*2 + 1] < STATES / 2) {
+			                        excluded_literals[(*excluded_literals_length)*2] = included_literals[literal_included*2];
+			                        excluded_literals[(*excluded_literals_length)*2 + 1] = included_literals[literal_included*2 + 1];
 			                        (*excluded_literals_length)++;
 
 			                        (*included_literals_length)--;
-			                        included_literals[literal*2] = included_literals[(*included_literals_length)*2];       
-			                        included_literals[literal*2 + 1] = included_literals[(*included_literals_length)*2 + 1];
+			                        included_literals[literal_included*2] = included_literals[(*included_literals_length)*2];       
+			                        included_literals[literal_included*2 + 1] = included_literals[(*included_literals_length)*2 + 1];
 			                    }
 							}
 						}
 
-						literal = (*excluded_literals_length);
-						while (literal--) {
-							if (X[chunk + included_literals[literal*2]] & pos) {
-								excluded_literals[literal*2 + 1]++;
+						while (literal_excluded--) {
+							if (X[chunk + included_literals[literal_excluded*2]] & pos) {
+								excluded_literals[literal_excluded*2 + 1]++;
 
-								if (excluded_literals[literal*2 + 1] >= STATES / 2) {
-			                        included_literals[(*included_literals_length)*2] = excluded_literals[literal*2];
-			                        included_literals[(*included_literals_length)*2 + 1] = excluded_literals[literal*2 + 1];
+								if (excluded_literals[literal_excluded*2 + 1] >= STATES / 2) {
+			                        included_literals[(*included_literals_length)*2] = excluded_literals[literal_excluded*2];
+			                        included_literals[(*included_literals_length)*2 + 1] = excluded_literals[literal_excluded*2 + 1];
 			                        (*included_literals_length)++;
 
 			                        (*excluded_literals_length)--;
-			                        excluded_literals[literal*2] = excluded_literals[(*excluded_literals_length)*2];       
-			                        excluded_literals[literal*2 + 1] = excluded_literals[(*excluded_literals_length)*2 + 1];
+			                        excluded_literals[literal_excluded*2] = excluded_literals[(*excluded_literals_length)*2];       
+			                        excluded_literals[literal_excluded*2 + 1] = excluded_literals[(*excluded_literals_length)*2 + 1];
 		                    	}
-							} else if (curand_uniform(localState) <= 1.0/S && excluded_literals[literal*2 + 1] > 0) {
-								excluded_literals[literal*2 + 1]--;
+							} else if (curand_uniform(localState) <= 1.0/S && excluded_literals[literal_excluded*2 + 1] > 0) {
+								excluded_literals[literal_excluded*2 + 1]--;
 							}
 						}
 					} else {
-						int literal = (*included_literals_length);
+						unsigned int literal = (*included_literals_length);
 						while (literal--) {
 							if (curand_uniform(localState) <= 1.0/S) {
 								included_literals[literal*2 + 1]--;
