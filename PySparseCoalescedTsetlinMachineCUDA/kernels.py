@@ -156,7 +156,7 @@ code_update = """
 						}
 
 						while (literal_excluded--) {
-							if (X[chunk + included_literals[literal_excluded*2]] & pos) {
+							if (X[chunk + excluded_literals[literal_excluded*2]] & pos) {
 								excluded_literals[literal_excluded*2 + 1]++;
 
 								if (excluded_literals[literal_excluded*2 + 1] >= STATES / 2) {
